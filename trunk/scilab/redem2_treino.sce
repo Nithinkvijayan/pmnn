@@ -46,8 +46,15 @@ function [w,a,epoca,vet_erro] = redem2_treino(entrada,desejada,num_esp,arq_esp,f
     // Verifica o tamanho dos arquivos
   if qt_pontos <> qt_pontosd
     disp('erro com os arquivos de treinamento: tamanho incompativel');
-    abort
+    abort;
   end
+  
+    // Verifica o tamanho da saída e dos arquivos
+  if arq_esp(length(arq_esp)) <> q
+    disp('erro com o tamanho da rede e do exemplo: tamanho incompativel');
+    abort;
+  end
+  
   
 // -------------  
 // INICIALIZACAO
@@ -100,7 +107,7 @@ function [w,a,epoca,vet_erro] = redem2_treino(entrada,desejada,num_esp,arq_esp,f
   gradi_gate = zeros(max_neu_gate, num_cam_gate);
   
     // armazena o valor da saída da rede
-  y = zeros(num_esp,1);
+  y = zeros(q,1);
   
     // probabilidae a priori
   g = zeros(num_esp,1);
@@ -114,7 +121,7 @@ function [w,a,epoca,vet_erro] = redem2_treino(entrada,desejada,num_esp,arq_esp,f
   erro_inst = zeros(qt_pontos,1); tmom = 0;
   soma_gradi = 0; soma_erro=0;
   soma_campo = 0;
-  erro_medio = erro_max + 10;
+  erro_medio = erro_max + 1;
   vet_erro = zeros(epocas_max,1);
 
     // valor do erro local, num neuronios saida, num especialistas
@@ -127,12 +134,12 @@ function [w,a,epoca,vet_erro] = redem2_treino(entrada,desejada,num_esp,arq_esp,f
 // -----------------------
   
     // inicializacao dos pesos sinapticos w com valores de 0 a 0.5
-  w = rand(w);
-  w = w*0.5;
+  w = (rand(w)*2) - 1;
+  //w = w*0.5;
   
     // inicializacao dos pesos sinapticos a com valores de 0 a 0.5
-  a = rand(a);
-  a = a*0.5;
+  a = (rand(a)*2) - 1 ;
+  //a = a*0.5;
   
     // Indice para acesso ao vetor de entrada
   indice = [1:qt_pontos];
@@ -286,11 +293,11 @@ function [w,a,epoca,vet_erro] = redem2_treino(entrada,desejada,num_esp,arq_esp,f
       for esp=1:num_esp
         for i=1:q
           erro_local(i,esp) = d(indice(exemplo),i) - yi(i,num_cam_esp,esp);
-          soma_erro = soma_erro + erro_local(i,esp);
+//          soma_erro = soma_erro + erro_local(i,esp);
         end
       end
       
-      erro_inst(exemplo) = soma_erro/2;
+//      erro_inst(exemplo) = soma_erro/2;
       
             
         // Calculo da prob a posteriori
@@ -301,11 +308,13 @@ function [w,a,epoca,vet_erro] = redem2_treino(entrada,desejada,num_esp,arq_esp,f
       for esp=1:num_esp
         temp = 0;
         for i=1:q
-          temp = temp + erro_local(i,esp);
+          temp = temp + erro_local(i,esp)^2;
         end
-        hexp(esp) = g(esp) * exp( -0.5 * (temp^2) );
+        hexp(esp) = g(esp) * exp( -0.5 * sqrt(temp) );
+        erro_inst(exemplo) = erro_inst(exemplo) + sqrt(temp);
         hsoma = hsoma + hexp(esp);
       end
+      erro_inst(exemplo) = erro_inst(exemplo)/num_esp;
       
       for esp=1:num_esp
         h(esp) = hexp(esp)/hsoma;
@@ -365,8 +374,8 @@ function [w,a,epoca,vet_erro] = redem2_treino(entrada,desejada,num_esp,arq_esp,f
             
               soma_gradi = 0;
                 // para cada neuronio da camada da frente
-              for k=1:arq_esp(camada)
-                soma_gradi = soma_gradi + ( gradi(k,(camada+1),esp) * w(k,(j+1),camada,esp) );
+              for k=1:arq_esp(camada+1)
+                soma_gradi = soma_gradi + ( gradi(k,(camada+1),esp) * w((j+1),k,camada,esp) );
               end
                 // calculo do gradiente local
               gradi(j,camada,esp) = soma_gradi * rna_funcao_deriv_ativacao( campo(j,camada,esp), func_esp(camada) );  
@@ -407,12 +416,12 @@ function [w,a,epoca,vet_erro] = redem2_treino(entrada,desejada,num_esp,arq_esp,f
         if camada == num_cam_gate
         
             // para cada neuronio da saida
-          for j=1:q
+          for j=1:num_esp
           
               // calculo do gradiente local
             gradi_gate(j,camada) = rna_funcao_deriv_ativacao( campo_gate(j,camada), func_gate(camada) );
               // calculo do deltaw * UTILIZA-SE O H *
-            deltaw = eta_gate * gradi_gate(j,camada) * ( h(esp) - g(esp) ) * bias_gate;
+            deltaw = eta_gate * gradi_gate(j,camada) * ( h(i) - g(i) ) * bias_gate;
               // termo do momento
             aux = a(1,j,(camada-1));
             mom = alfa * daa(1,j,(camada-1));
@@ -423,7 +432,7 @@ function [w,a,epoca,vet_erro] = redem2_treino(entrada,desejada,num_esp,arq_esp,f
             
               // percorre todos os pesos com neuronios anteriores
             for i=1:arq_gate(camada-1)
-              deltaw = eta_gate * gradi_gate(j,camada) * ( h(esp) -g(esp) ) * ai(i,(camada-1));
+              deltaw = eta_gate * gradi_gate(j,camada) * ( h(i) - g(i) ) * ai(i,(camada-1));
               aux = a((i+1),j,(camada-1));
               mom = alfa_gate * daa((i+1),j,(camada-1));
               a((i+1),j,(camada-1)) = aux + mom + deltaw;
@@ -435,7 +444,7 @@ function [w,a,epoca,vet_erro] = redem2_treino(entrada,desejada,num_esp,arq_esp,f
         end // fim camada de saida
         
           // para cada camada oculta
-        if camada < num_cam_esp
+        if camada < num_cam_gate
         
             // para cada neuronio
           for j=1:arq_gate(camada)
@@ -443,7 +452,7 @@ function [w,a,epoca,vet_erro] = redem2_treino(entrada,desejada,num_esp,arq_esp,f
             soma_gradi = 0;
               // para cada neuronio da camada da frente
             for k=1:arq_gate(camada)
-              soma_gradi = soma_gradi + ( gradi_gate(k,(camada+1)) * a(k,(j+1),camada) );
+              soma_gradi = soma_gradi + ( gradi_gate(k,(camada+1)) * a((j+1),k,camada) );
             end
               // calculo do gradiente local
             gradi_gate(j,camada) = soma_gradi * rna_funcao_deriv_ativacao( campo_gate(j,camada), func_gate(camada) );  
@@ -472,30 +481,31 @@ function [w,a,epoca,vet_erro] = redem2_treino(entrada,desejada,num_esp,arq_esp,f
       
       end // fim camada gate
       
-        // -------------------
-        // 3 - CALCULO DO ERRO
-        // -------------------
-        
-        // atualiza o valor da media do erro quadratico medio do treinamento
-      temp = 0;
-      
-      for l=1:qt_pontos
-        temp = temp + erro_inst(l);
-      end
-      
-      erro_medio = temp / qt_pontos;
-      
-        // incrementa a epoca
-      epoca = epoca + 1;
-      
-        // adiciona o valor do erro_medio no vetor de erro
-      vet_erro(epoca) = erro_medio;
-      
-      // ajusta os indices dos dados de treinamento para proxima epoca
-      indice = rand_indice(indice);
-    
-      
     end // FIM DE UMA EPOCA DE TREINAMENTO
+    
+      // -------------------
+      // 3 - CALCULO DO ERRO
+      // -------------------
+      
+      // atualiza o valor da media do erro quadratico medio do treinamento
+    temp = 0;
+    
+    for l=1:qt_pontos
+      temp = temp + erro_inst(l);
+    end
+    
+    erro_medio = temp / qt_pontos;
+    
+      // incrementa a epoca
+    epoca = epoca + 1;
+    
+      // adiciona o valor do erro_medio no vetor de erro
+    vet_erro(epoca) = erro_medio;
+    
+    // ajusta os indices dos dados de treinamento para proxima epoca
+    indice = rand_indice(indice);
+  
+
   
   end // FIM LACO DE TREINAMENTO
 

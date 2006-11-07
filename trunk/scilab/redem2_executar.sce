@@ -8,7 +8,7 @@
 // Modelo de Mistura Gaussiano Associativo com MLPs
 // 
 // Data criacao: 25 Out 2006
-// Ultima alteracao: 2006 Out 27
+// Ultima alteracao: 2006 Nov 7
 //
 
 // ////////////////////////////////////
@@ -21,18 +21,24 @@ function [y] = redem2_executar(entrada,num_esp,arq_esp,w,func_esp,bias,arq_gate,
 // LIMPANDO VARIAVEIS
 // ------------------
 
-  x=0; y=0; p=0; q=0;
-  qt_pontos=0; qt_pontosd=0;
-  w=0; a=0; d=0;
-  erro_inst=0; tmom=0; soma_grad=0;
-  soma_erro=0;
+  x=0; p=0; q=0;
 
 // -------------  
 // INICIALIZACAO
 // -------------
+  
+    // leitura dos dados de entrada
+  x = entrada
 
     // sobre a arquitetura dos especialistas
   num_cam_esp = length(arq_esp);
+
+    // quant de pontos de treinamento e o tamanho de cada exemplo
+  [p] = length(x);
+ 
+    // quant de pontos de treinamento deve ser igual a qpontos e tamanho de cada exemplo desejado
+  [q] = (arq_esp(num_cam_esp));
+
   
     // sobre a arquitetura da passagem
   num_cam_gate = length(arq_gate);
@@ -42,7 +48,7 @@ function [y] = redem2_executar(entrada,num_esp,arq_esp,w,func_esp,bias,arq_gate,
 
     // quantidade maxima de neurônios por camada de passagem
   max_neu_gate = max(arq_gate);
-  
+
     // funcional dos neuronios, matriz de 3 dimensoes
     // neuronios, camadas, especialistas
   yi = zeros(max_neu_esp, num_cam_esp, num_esp);
@@ -57,13 +63,19 @@ function [y] = redem2_executar(entrada,num_esp,arq_esp,w,func_esp,bias,arq_gate,
     // campo da rede de passagem
   campo = zeros(max_neu_esp, num_cam_esp, num_esp);
   campo_gate = zeros(max_neu_gate, num_cam_gate);
-
+  
     // armazena o valor da saída da rede
-  y = zeros(num_esp,1);
+  y = zeros(q,1);
   
     // probabilidae a priori
   g = zeros(num_esp,1);
   
+
+  soma_campo = 0;
+
+// -------------------------------
+// INICIO ALGORITMO DE TREINAMENTO
+// -------------------------------
 
     
         // ---------------------
@@ -82,8 +94,8 @@ function [y] = redem2_executar(entrada,num_esp,arq_esp,w,func_esp,bias,arq_gate,
             
               // para cada neuronio da camada de entrada
             for j=1:arq_esp(1)
-              campo(j,camada,esp) = entrada(j);
-              yi(j,camada,esp) = entrada(j);              
+              campo(j,camada,esp) = x(j);
+              yi(j,camada,esp) = x(j);              
             end
             
           end // caso primeira camada
@@ -127,8 +139,8 @@ function [y] = redem2_executar(entrada,num_esp,arq_esp,w,func_esp,bias,arq_gate,
             
               // para cada neuronio da camada de entrada
             for j=1:arq_gate(1)
-              campo_gate(j,camada) = entrada(j);
-              ai(j,camada) = entrada(j);
+              campo_gate(j,camada) = x(j);
+              ai(j,camada) = x(j);
             end
           
           end // caso primeira camada
@@ -184,7 +196,6 @@ function [y] = redem2_executar(entrada,num_esp,arq_esp,w,func_esp,bias,arq_gate,
           y(i) = y(i) + ( yi(i,num_cam_esp,esp) * g(esp) );
         end
       end
-      
+  
 endfunction
-
 
