@@ -42,7 +42,7 @@ function [y] = redem2_executar(entrada,num_esp,arq_esp,w,func_esp,bias,arq_gate,
 
     // quantidade maxima de neurônios por camada de passagem
   max_neu_gate = max(arq_gate);
-
+  
     // funcional dos neuronios, matriz de 3 dimensoes
     // neuronios, camadas, especialistas
   yi = zeros(max_neu_esp, num_cam_esp, num_esp);
@@ -82,8 +82,8 @@ function [y] = redem2_executar(entrada,num_esp,arq_esp,w,func_esp,bias,arq_gate,
             
               // para cada neuronio da camada de entrada
             for j=1:arq_esp(1)
-              campo(j,camada,esp) = x(j);
-              yi(j,camada,esp) = x(j);              
+              campo(j,camada,esp) = entrada(j);
+              yi(j,camada,esp) = entrada(j);              
             end
             
           end // caso primeira camada
@@ -127,8 +127,8 @@ function [y] = redem2_executar(entrada,num_esp,arq_esp,w,func_esp,bias,arq_gate,
             
               // para cada neuronio da camada de entrada
             for j=1:arq_gate(1)
-              campo_gate(j,camada) = x(j);
-              ai(j,camada) = x(j);
+              campo_gate(j,camada) = entrada(j);
+              ai(j,camada) = entrada(j);
             end
           
           end // caso primeira camada
@@ -185,40 +185,6 @@ function [y] = redem2_executar(entrada,num_esp,arq_esp,w,func_esp,bias,arq_gate,
         end
       end
       
-endfunction
-
-
-// ////////////////////////////////////
-// Funcao de ativacao para os neuronios
-// ////////////////////////////////////
-function [y] = rna_funcao_ativacao( x, tipo )
-
-    // Funcao linear
-  if tipo == 0
-  	y = x;
-  end
-
-   // Funcao Sigmoide
-  if tipo == 1
-  	y = 1/( 1 + exp(-x) );
-  end
-
-   // Funcao Tangente Hiperbolia
-  if tipo == 2
-  	a = 1.7159;
-  	b = 2/3;
-  	y = a*tanh(b*x);
-  end
-
-   // Funcao de limiar para 0.5
-  if tipo == 3
-  	if x < 0.5
-  		y = 0;
-  	else
-  		y = 1;
-  	end
-  end
-
 endfunction
 
 
