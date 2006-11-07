@@ -11,7 +11,7 @@
 // Ultima alteracao: 2006 Out 18
 //
 
-function [w,a] = redem_treino(entrada,desejada,k,epocas,eta,eta2)
+function [w,a,verro] = redem_treino(entrada,desejada,k,epocas,eta,eta2)
 
 
 // LIMPANDO VARIAVEIS
@@ -96,6 +96,9 @@ function [w,a] = redem_treino(entrada,desejada,k,epocas,eta,eta2)
   // Indice para acesso ao vetor de entrada
   vind = [1:qpontos];
   
+  verro = zeros(epocas,1);
+  errolocal = zeros(qpontos,1);
+  
 //  disp(size(w)); disp(w); disp(size(a)); disp(a);
 
 
@@ -104,6 +107,8 @@ function [w,a] = redem_treino(entrada,desejada,k,epocas,eta,eta2)
 
   // para todas as epocas
   for ep=1:epocas
+    
+     errolocal = zeros(qpontos,1);
   
     // para todos os exemplos de treinamento
     for n=1:qpontos
@@ -149,18 +154,22 @@ function [w,a] = redem_treino(entrada,desejada,k,epocas,eta,eta2)
 
       // calculo das probabilidades a posteriori h
       hsoma = 0;
+//      errolocal(n) = 0;
       for i=1:k
         temp = 0;
         for m=1:q
           temp = temp + e(m,i)*e(m,i);
         end
 //        hexp(i) = g(i) * exp( -0.5 * (temp^2) );
-        hexp(i) = g(i) * exp( -0.5 * (temp/2) );
+//        hexp(i) = g(i) * exp( -0.5 * (temp/2) );
+//        hexp(i) = g(i) * exp( -0.5 * temp );
+        hexp(i) = g(i) * exp( -0.5 * sqrt(temp) );
+        errolocal(n) = errolocal(n) + sqrt(temp);
 //        hexp(i) = g(i) * exp( -0.5 * (temp) );
         hsoma = hsoma + hexp(i);
 //        printf("%f ",hsoma); 
       end
-      
+      errolocal(n) = errolocal(n)/k;
       
       for i=1:k
         h(i) = hexp(i)/hsoma;
@@ -184,6 +193,7 @@ function [w,a] = redem_treino(entrada,desejada,k,epocas,eta,eta2)
       
     end // fim dos exemplos
     
+    verro(ep) = (sum(errolocal))/qpontos; 
     // alterar a ordem dos exemplos
     // cria vetor temporaria para a nova ordem do indice
     n_ordem = zeros(qpontos,1);
