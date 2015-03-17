@@ -1,0 +1,3 @@
+This project was made to support my academic work about the use of parallel programming and cluster of machines in construction of commit of artificial neural networks and modular neural networks. It utilize MPI, C++ and also Scilab for modeling.
+
+Este projeto tem o objetivo de prover suporte ao desenvolvimento do meu trabalho de mestrado sobre a criação de redes neurais artificiais em ambientes paralelos, especificamente utilizando MPI, C++ e Scilab no modelamento.
